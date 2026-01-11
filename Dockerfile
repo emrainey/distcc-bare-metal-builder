@@ -16,7 +16,7 @@ RUN apt-get -y install tzdata
 RUN apt install -y joe vim zsh tmux screen htop curl wget sudo openssl
 # Add some developer tools
 RUN apt install -y git cmake make ninja-build
-# adds the Host compiler, and the cross compiler
+# adds the Host compiler, and the cross compiler (13 at the moment)
 RUN apt install -y gcc-13 g++-13 gcc-arm-none-eabi clang-20 llvm-20 lld-20 lldb-20 libc++-20-dev libc++abi-20-dev distcc
 # Installs developer tools
 RUN apt install -y lcov gcovr doxygen graphviz
@@ -33,12 +33,18 @@ ENV HOME=/home/distcc
 RUN useradd -s /bin/bash -m distcc
 # ENV DISTCC_CMDLIST="/usr/bin/gcc /usr/bin/g++ /usr/bin/c++ /usr/bin/cc /usr/bin/arm-none-eabi-gcc /usr/bin/arm-none-eabi-g++ /usr/bin/arm-none-eabi-c++ /usr/bin/arm-none-eabi-cc"
 # # only match the last command (paths should not matter then)
-# ENV DISTCC_CMDLIST_NUMWORDS=1
-# ENV DISTCC_DIR=/tmp/distcc
+ENV DISTCC_CMDLIST_NUMWORDS=1
+ENV DISTCC_DIR=/tmp/distcc
+
+# Mimic Homebrew from Mac OS by making symlinks back to /usr/bin
+RUN mkdir -p /opt/homebrew /Applications/ArmGNUToolchain/13.2.Rel1/arm-none-eabi
+RUN ln -s /usr/bin /opt/homebrew/bin
+RUN ln -s /usr/bin /Applications/ArmGNUToolchain/13.2.Rel1/arm-none-eabi/bin
+
 
 # Define how to start distccd by default
 # (see "man distccd" for more information)
-ENTRYPOINT ["distccd", "--daemon", "--no-detach", "--user", "distcc", "--port", "3632", "--stats", "--stats-port", "3633", "--log-stderr", "--listen", "0.0.0.0"]
+ENTRYPOINT ["distccd", "--daemon", "--no-detach", "--user", "distcc", "--port", "3632", "--stats", "--stats-port", "3633", "--log-stderr", "--listen", "0.0.0.0", "--enable-tcp-insecure"]
 
 # By default the distcc server will accept clients from everywhere.
 # Feel free to run the docker image with different values for the

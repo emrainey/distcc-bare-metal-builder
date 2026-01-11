@@ -12,7 +12,7 @@ A container definition for cross building w/ GCC using distcc in a Docker contai
 
 ## Build
 
-I use finch on an Apple Silicon Mac, so the commands will be slightly different than docker.w
+I use `finch` on an Apple Silicon Mac, so the commands will be slightly different than `docker`.
 
 ```bash
 finch build . -t distcc-bare-metal-builder
@@ -30,6 +30,8 @@ distcc-bare-metal-builder    latest    c01137145099    10 seconds ago    linux/a
 ## Running
 
 ```bash
+finch run --detach --net=host distcc-bare-metal-builder:latest
+# or (just exposing the exact ports)
 finch run --detach -p 3633:3633 -p 3632:3632 distcc-bare-metal-builder:latest
 ```
 
@@ -78,3 +80,15 @@ $ finch ps
 # use ID from ps list
 $ finch stop $ID
 ```
+
+## Testing
+
+You can test the setup by running the provided `test.sh` script. It has some of my local MacOS paths, but those should be able to be changed to where your ARM GNU Toolchain is installed:
+
+```bash
+./test.sh
+```
+
+### NOTE
+
+If your path to the compiler is not mentioned in the Dockerfile, as a soft-link the build may fail if you are not using `/usr/bin/` compilers.
