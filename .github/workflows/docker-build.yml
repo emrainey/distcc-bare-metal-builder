@@ -45,5 +45,30 @@ jobs:
         with:
           context: .
           push: true
+          load: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Tag with tool versions
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          BASE_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -1)
+
+          DISTCC_VER=$(docker run --rm --entrypoint /bin/bash "$BASE_TAG" -c 'distccd --version 2>&1' | head -1 | awk '{print $2}')
+          GCC_VER=$(docker run --rm --entrypoint /bin/bash "$BASE_TAG" -c 'gcc --version 2>&1' | head -1 | awk '{print $NF}')
+          ARM_GCC_VER=$(docker run --rm --entrypoint /bin/bash "$BASE_TAG" -c 'arm-none-eabi-gcc --version 2>&1' | head -1 | awk '{print $(NF-1)}')
+          CLANG_VER=$(docker run --rm --entrypoint /bin/bash "$BASE_TAG" -c 'clang-22 --version 2>&1' | head -1 | awk '{print $4}')
+
+          COMPOSITE="gcc${GCC_VER}-armgcc${ARM_GCC_VER}-clang${CLANG_VER}"
+
+          docker tag "$BASE_TAG" "${IMAGE}:${COMPOSITE}"
+          docker tag "$BASE_TAG" "${IMAGE}:distcc-${DISTCC_VER}"
+          docker tag "$BASE_TAG" "${IMAGE}:gcc-${GCC_VER}"
+          docker tag "$BASE_TAG" "${IMAGE}:arm-none-eabi-gcc-${ARM_GCC_VER}"
+          docker tag "$BASE_TAG" "${IMAGE}:clang-${CLANG_VER}"
+
+          docker push "${IMAGE}:${COMPOSITE}"
+          docker push "${IMAGE}:distcc-${DISTCC_VER}"
+          docker push "${IMAGE}:gcc-${GCC_VER}"
+          docker push "${IMAGE}:arm-none-eabi-gcc-${ARM_GCC_VER}"
+          docker push "${IMAGE}:clang-${CLANG_VER}"
