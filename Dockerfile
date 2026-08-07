@@ -41,6 +41,15 @@ RUN apt-get update && apt-get install -y \
     tzdata \
     wget \
     && arm-none-eabi-gcc --version \
+    \
+    # Ubuntu/Debian split the newlib headers (inttypes.h etc.) from the GCC
+    # toolchain package. GCC ships its own self-contained <stdint.h> which
+    # shadows newlib's <stdint.h>, so newlib's <inttypes.h> never sees
+    # __int64_t_defined and omits the base 64-bit PRI macros (PRIx64/PRId64/PRIu64).
+    # Bridge the two by chaining GCC's <stdint.h> into newlib's via #include_next.
+    && echo "Chaining GCC <stdint.h> to newlib <stdint.h> so PRIx64/PRId64/PRIu64 are defined" \
+    && printf "\n#include_next <stdint.h>\n" >> "$(arm-none-eabi-gcc -print-file-name=include/stdint.h)" \
+    && arm-none-eabi-gcc --version \
     && apt-get autoremove --purge -y \
     && apt-get autoclean -y \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/* /tmp/*
